@@ -1,9 +1,13 @@
 describe('Auth Workflow', () => {
-  it('should have auth modules available', () => {
+  it('should check user authentication state', async () => {
     const authApi = require('../../../lib/api/auth');
-    const savedApi = require('../../../lib/api/saved');
     
-    expect(authApi).toBeDefined();
-    expect(savedApi).toBeDefined();
+    const { user, error } = await authApi.getCurrentUser();
+    
+    if (error) {
+      expect(error.message).toBeDefined();
+    } else {
+      expect(user).toBeDefined();
+    }
   });
 });

@@ -1,17 +1,5 @@
 jest.unmock('expo');
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    from: jest.fn(),
-    auth: {
-      signUp: jest.fn(),
-      signInWithPassword: jest.fn(),
-      signOut: jest.fn(),
-      getUser: jest.fn(),
-    },
-  })),
-}));
-
 jest.mock('expo-router', () => ({
   Stack: 'Stack',
   Tabs: 'Tabs',

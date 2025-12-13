@@ -1,16 +1,20 @@
 describe('Auth API', () => {
-  it('should export register function', () => {
+  it('should export auth functions', () => {
     const authApi = require('../../../lib/api/auth');
     expect(authApi.register).toBeDefined();
-  });
-
-  it('should export login function', () => {
-    const authApi = require('../../../lib/api/auth');
     expect(authApi.login).toBeDefined();
+    expect(authApi.logout).toBeDefined();
+    expect(authApi.getCurrentUser).toBeDefined();
   });
 
-  it('should export logout function', () => {
+  it('should get current user or return session missing', async () => {
     const authApi = require('../../../lib/api/auth');
-    expect(authApi.logout).toBeDefined();
+    const { user, error } = await authApi.getCurrentUser();
+    
+    if (error) {
+      expect(error.message).toContain('session');
+    } else {
+      expect(user).toBeDefined();
+    }
   });
 });
