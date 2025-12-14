@@ -1,22 +1,23 @@
 // app/(tabs)/recipe-detail.tsx
-import React, { useEffect, useState } from 'react'
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  useWindowDimensions,
-} from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { Recipe } from '../../lib/models/types'
-import { getRecipeById } from '../../lib/api/recipies'
+import { useEffect, useState } from 'react'
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
+} from 'react-native'
 import { addRating, getUserRating } from '../../lib/api/ratings'
-import { reportRecipe, hasUserReported } from '../../lib/api/reports'
-import { useAuth } from '../../lib/viewmodels/useAuth'
+import { getRecipeById } from '../../lib/api/recipies'
+import { hasUserReported, reportRecipe } from '../../lib/api/reports'
+import { Recipe } from '../../lib/models/types'
 import { theme } from '../../lib/theme'
+import { useAuth } from '../../lib/viewmodels/useAuth'
 
 export default function RecipeDetailScreen() {
   const { width } = useWindowDimensions()
@@ -102,20 +103,38 @@ export default function RecipeDetailScreen() {
   const handleReport = async () => {
     if (!user || isReporting || hasReported) return
 
-    try {
-      setIsReporting(true)
-      const { error } = await reportRecipe(user.id, recipeId, 'Nevhodný obsah')
-      if (error) {
-        console.error('Error reporting recipe:', error)
-      } else {
-        setHasReported(true)
-        alert('Recept bol nahlásený. Ďakujeme za spätnú väzbu.')
-      }
-    } catch (err) {
-      console.error('Error:', err)
-    } finally {
-      setIsReporting(false)
-    }
+    Alert.alert(
+      'Nahlásiť recept',
+      'Naozaj chceš nahlásiť tento recept ako nevhodný obsah?',
+      [
+        {
+          text: 'Zrušiť',
+          style: 'cancel'
+        },
+        {
+          text: 'Nahlásiť',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsReporting(true)
+              const { error } = await reportRecipe(user.id, recipeId, 'Nevhodný obsah')
+              if (error) {
+                console.error('Error reporting recipe:', error)
+                Alert.alert('Chyba', 'Nepodarilo sa nahlásiť recept')
+              } else {
+                setHasReported(true)
+                Alert.alert('Úspech', 'Recept bol nahlásený. Ďakujeme za spätnú väzbu.')
+              }
+            } catch (err) {
+              console.error('Error:', err)
+              Alert.alert('Chyba', 'Nastala neočakávaná chyba')
+            } finally {
+              setIsReporting(false)
+            }
+          }
+        }
+      ]
+    )
   }
 
   if (loading) {

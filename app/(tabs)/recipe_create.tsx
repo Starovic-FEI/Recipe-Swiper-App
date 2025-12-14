@@ -1,25 +1,25 @@
 // app/(tabs)/recipe_create.tsx
-import { router } from 'expo-router'
-import { useState, useEffect } from 'react'
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  ScrollView,
-  Platform,
-  Alert,
-  Image
-} from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
-import { useAuth } from '../../lib/viewmodels/useAuth'
-import { createRecipe } from '../../lib/api/recipies'
+import { router } from 'expo-router'
+import { useEffect, useState } from 'react'
+import {
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native'
 import { getCategories } from '../../lib/api/categories'
-import { getTags, addRecipeTags } from '../../lib/api/tags'
 import { uploadMultipleRecipeImages } from '../../lib/api/images'
+import { createRecipe } from '../../lib/api/recipies'
+import { saveRecipe } from '../../lib/api/saved'
+import { addRecipeTags, getTags } from '../../lib/api/tags'
+import { Category, Ingredient, Tag } from '../../lib/models/types'
 import { theme } from '../../lib/theme'
-import { Category, Tag, Ingredient } from '../../lib/models/types'
+import { useAuth } from '../../lib/viewmodels/useAuth'
 
 interface SelectedImage {
   uri: string
@@ -166,31 +166,31 @@ export default function RecipeCreateScreen() {
   // Validácia
   const validate = () => {
     if (!title.trim()) {
-      Alert.alert('Chyba', 'Zadaj názov receptu')
+      Alert.alert('⚠️ Chýba názov', 'Musíš zadať názov receptu', [{ text: 'OK' }])
       return false
     }
     if (!description.trim()) {
-      Alert.alert('Chyba', 'Zadaj popis receptu')
+      Alert.alert('⚠️ Chýba popis', 'Musíš zadať popis receptu', [{ text: 'OK' }])
       return false
     }
     if (ingredients.every(ing => !ing.name.trim())) {
-      Alert.alert('Chyba', 'Pridaj aspoň jednu ingredienciu')
+      Alert.alert('⚠️ Chýbajú ingrediencie', 'Musíš pridať aspoň jednu ingredienciu', [{ text: 'OK' }])
       return false
     }
     if (steps.every(step => !step.trim())) {
-      Alert.alert('Chyba', 'Pridaj aspoň jeden krok')
+      Alert.alert('⚠️ Chýbajú kroky', 'Musíš pridať aspoň jeden krok prípravy', [{ text: 'OK' }])
       return false
     }
     if (!categoryId) {
-      Alert.alert('Chyba', 'Vyber kategóriu')
+      Alert.alert('⚠️ Chýba kategória', 'Musíš vybrať kategóriu receptu', [{ text: 'OK' }])
       return false
     }
     if (!prepTime || parseInt(prepTime) <= 0) {
-      Alert.alert('Chyba', 'Zadaj čas prípravy')
+      Alert.alert('⚠️ Chýba čas', 'Musíš zadať čas prípravy (v minútach)', [{ text: 'OK' }])
       return false
     }
     if (!servings || parseInt(servings) <= 0) {
-      Alert.alert('Chyba', 'Zadaj počet porcií')
+      Alert.alert('⚠️ Chýba počet porcií', 'Musíš zadať počet porcií', [{ text: 'OK' }])
       return false
     }
     return true
@@ -295,12 +295,24 @@ export default function RecipeCreateScreen() {
 
       console.log('🎉 RECEPT ÚSPEŠNE VYTVORENÝ! ID:', recipe?.id)
 
-      Alert.alert('Úspech', `Recept "${title}" bol vytvorený!\n\nID: ${recipe?.id}`, [
-        {
-          text: 'OK',
-          onPress: () => router.back()
-        }
-      ])
+      // Auto-save to user's saved recipes
+      try {
+        await saveRecipe(user.id, recipe!.id)
+        console.log('✅ Recept automaticky uložený do obľúbených')
+      } catch (saveError) {
+        console.error('⚠️ Nepodarilo sa automaticky uložiť:', saveError)
+      }
+
+      Alert.alert(
+        '🎉 Úspech!',
+        `Recept "${title}" bol úspešne vytvorený a pridaný do tvojich obľúbených!`,
+        [
+          {
+            text: 'Zobraziť v obľúbených',
+            onPress: () => router.push('/(tabs)/favorites')
+          }
+        ]
+      )
     } catch (err) {
       console.error('❌ KRITICKÁ CHYBA:', err)
       Alert.alert('Kritická chyba', `${err}\n\n${JSON.stringify(err, null, 2)}`)
