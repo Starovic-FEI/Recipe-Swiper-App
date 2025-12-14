@@ -1,15 +1,15 @@
 // app/(tabs)/recipes.tsx
-import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Modal } from 'react-native'
 import { router } from 'expo-router'
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import RecipeCarousel from '../../components/RecipeCarousel'
 import RecipeFiltersModal, { RecipeFilters } from '../../components/RecipeFilters'
-import { Recipe } from '../../lib/models/types'
 import { getUnsavedRecipes } from '../../lib/api/recipies'
-import { saveRecipe } from '../../lib/api/saved'
 import { reportRecipe } from '../../lib/api/reports'
-import { useAuth } from '../../lib/viewmodels/useAuth'
+import { saveRecipe } from '../../lib/api/saved'
+import { Recipe } from '../../lib/models/types'
 import { theme } from '../../lib/theme'
+import { useAuth } from '../../lib/viewmodels/useAuth'
 
 export default function RecipesScreen() {
   const { user, profile, logout } = useAuth()
@@ -48,6 +48,23 @@ export default function RecipesScreen() {
   }, [filters, user])
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Prevent body scrolling on web
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.height = '100vh'
+      document.documentElement.style.height = '100vh'
+      
+      return () => {
+        document.body.style.overflow = ''
+        document.documentElement.style.overflow = ''
+        document.body.style.height = ''
+        document.documentElement.style.height = ''
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     // Spočítame počet aktívnych filtrov
     let count = 0
     if (filters.categoryId) count++
@@ -76,16 +93,6 @@ export default function RecipesScreen() {
       }
     } catch (err) {
       console.error('Error:', err)
-    }
-  }
-
-  const handleDislike = (recipeId: number) => {
-    // Len odstránime recept zo zoznamu bez uloženia
-    setRecipes(prev => prev.filter(r => r.id !== recipeId))
-
-    // Ak došli recepty, načítame nové
-    if (recipes.length <= 3) {
-      loadRecipes()
     }
   }
 
@@ -189,7 +196,6 @@ export default function RecipesScreen() {
       <RecipeCarousel
         recipes={recipes}
         onLike={handleLike}
-        onDislike={handleDislike}
         onReport={handleReport}
       />
 
@@ -265,14 +271,25 @@ export default function RecipesScreen() {
   )
 }
 
+// Web-specific styles that aren't supported by React Native StyleSheet
+const webContainerStyle = Platform.OS === 'web' ? {
+  width: '100vw' as any,
+  height: '100vh' as any,
+  overflow: 'hidden' as any,
+  position: 'fixed' as any,
+  top: 0,
+  left: 0,
+} : {}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    ...webContainerStyle,
   },
   header: {
     backgroundColor: 'white',
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 24,
     flexDirection: 'row',
@@ -282,7 +299,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.textPrimary,
   },
