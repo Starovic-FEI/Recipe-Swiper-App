@@ -1,9 +1,9 @@
 // app/(auth)/forgot-password.tsx
 import { Link, router } from 'expo-router'
-import { useState, useEffect } from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Image, useWindowDimensions } from 'react-native'
-import { useAuth } from '../../lib/viewmodels/useAuth'
+import { useEffect, useState } from 'react'
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { theme } from '../../lib/theme'
+import { useAuth } from '../../lib/viewmodels/useAuth'
 
 const foodImages = [
   require('../../assets/foodimages/anna-tukhfatullina-food-photographer-stylist-Mzy-OjtCI70-unsplash.jpg'),
@@ -83,7 +83,7 @@ export default function ForgotPasswordScreen() {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Zabudol si heslo?</Text>
+          <Text style={styles.title}>Zabudnuté heslo?</Text>
           <Text style={styles.subtitle}>
             Zadaj svoj email a pošleme ti odkaz na obnovenie hesla
           </Text>
