@@ -1,9 +1,9 @@
 // app/(auth)/index.tsx
 import { Link } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { StyleSheet, Text, TouchableOpacity, View, Platform, Image } from 'react-native'
-import { useAuth } from '../../lib/viewmodels/useAuth'
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { theme } from '../../lib/theme'
+import { useAuth } from '../../lib/viewmodels/useAuth'
 
 const foodImages = [
   require('../../assets/foodimages/anna-tukhfatullina-food-photographer-stylist-Mzy-OjtCI70-unsplash.jpg'),
@@ -100,7 +100,7 @@ export default function AuthScreen() {
             <Text style={[styles.overlayTitle, {
               textShadow: '0 2px 10px rgba(0,0,0,0.3)',
             } as any]}>
-              Objavuj. Varí. Zdieľaj.
+              Objavuj. Uvar. Zdieľaj.
             </Text>
             <View style={styles.dotsContainer}>
               {foodImages.map((_, index) => (
