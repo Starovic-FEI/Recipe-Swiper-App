@@ -12,7 +12,7 @@ import { theme } from '../../lib/theme'
 import { useAuth } from '../../lib/viewmodels/useAuth'
 
 export default function RecipesScreen() {
-  const { user, profile, logout } = useAuth()
+  const { user, profile, logout, loading: authLoading } = useAuth()
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -22,6 +22,12 @@ export default function RecipesScreen() {
   const [filterCount, setFilterCount] = useState(0)
 
   const loadRecipes = async () => {
+    // Don't try to load if auth is still loading
+    if (authLoading) {
+      console.log('Auth still loading, waiting...')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
@@ -50,7 +56,7 @@ export default function RecipesScreen() {
 
   useEffect(() => {
     loadRecipes()
-  }, [filters, user])
+  }, [filters, user, authLoading])
 
   useEffect(() => {
     if (Platform.OS === 'web') {

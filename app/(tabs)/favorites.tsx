@@ -2,13 +2,13 @@
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 import { getFavoriteRecipes, getSavedRecipes, removeSavedRecipe, toggleFavorite } from '../../lib/api/saved'
 import { Recipe } from '../../lib/models/types'
@@ -18,7 +18,7 @@ import { useAuth } from '../../lib/viewmodels/useAuth'
 type TabType = 'saved' | 'favorites'
 
 export default function FavoritesScreen() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<TabType>('saved')
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([])
   const [favoriteRecipes, setFavoriteRecipes] = useState<Recipe[]>([])
@@ -27,9 +27,15 @@ export default function FavoritesScreen() {
 
   useEffect(() => {
     loadRecipes()
-  }, [user])
+  }, [user, authLoading])
 
   const loadRecipes = async () => {
+    // Don't try to load if auth is still loading
+    if (authLoading) {
+      console.log('Auth still loading, waiting...')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)

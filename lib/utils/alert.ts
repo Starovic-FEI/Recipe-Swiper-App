@@ -76,20 +76,31 @@ export const showConfirm = (
 ) => {
   if (Platform.OS === 'web') {
     // Web-specific implementation with proper async handling
-    const fullMessage = `${title}\n\n${message}`
+    const fullMessage = `${title}\n\n${message}\n\n[${cancelText}] / [${confirmText}]`
     const confirmed = window.confirm(fullMessage)
     
+    console.log('Confirm dialog result:', confirmed)
+    
     if (confirmed) {
+      console.log('User confirmed action')
       // Handle both sync and async callbacks
-      const result = onConfirm()
-      if (result instanceof Promise) {
-        result.catch(err => {
-          console.error('Error in confirm callback:', err)
-          window.alert('Nastala chyba pri vykonávaní akcie')
-        })
+      try {
+        const result = onConfirm()
+        if (result instanceof Promise) {
+          result.catch(err => {
+            console.error('Error in confirm callback:', err)
+            window.alert('Nastala chyba pri vykonávaní akcie')
+          })
+        }
+      } catch (err) {
+        console.error('Error calling onConfirm:', err)
+        window.alert('Nastala chyba')
       }
-    } else if (onCancel) {
-      onCancel()
+    } else {
+      console.log('User cancelled action')
+      if (onCancel) {
+        onCancel()
+      }
     }
   } else {
     // Native implementation
