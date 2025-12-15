@@ -1,6 +1,6 @@
 // components/RecipeCarousel.tsx
 import { LinearGradient } from 'expo-linear-gradient'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Image,
   Platform,
@@ -155,46 +155,85 @@ export default function RecipeCarousel({ recipes, onLike, onReport }: RecipeCaro
     handleDislike()
   }
 
-  // Pan gesture only for mobile (web doesn't need swipe gestures)
-  const panGesture = Platform.OS !== 'web' ? Gesture.Pan()
-    .activeOffsetX([-10, 10]) // Aktivuje sa len pri horizontálnom pohybe ±10px
-    .failOffsetY([-15, 15]) // Zruší sa pri vertikálnom pohybe ±15px (scroll)
-    .onUpdate((event) => {
-      // Len horizontálny pohyb
-      translateX.value = event.translationX
-      translateY.value = 0 // Ignoruj vertikálny pohyb
-    })
-    .onEnd((event) => {
-      const swipeThreshold = cardWidth * 0.5
+  // Pan gesture for mobile (with scroll support) and web (including DevTools inspect mode)
+  const panGesture = Platform.OS !== 'web' 
+    ? Gesture.Pan()
+        .activeOffsetX([-10, 10]) // Aktivuje sa len pri horizontálnom pohybe ±10px
+        .failOffsetY([-15, 15]) // Zruší sa pri vertikálnom pohybe ±15px (scroll)
+        .onUpdate((event) => {
+          // Len horizontálny pohyb
+          translateX.value = event.translationX
+          translateY.value = 0 // Ignoruj vertikálny pohyb
+        })
+        .onEnd((event) => {
+          const swipeThreshold = cardWidth * 0.5
 
-      if (Math.abs(event.translationX) > swipeThreshold) {
-        const direction = event.translationX > 0 ? 1 : -1
-        swipeDirection.value = direction
+          if (Math.abs(event.translationX) > swipeThreshold) {
+            const direction = event.translationX > 0 ? 1 : -1
+            swipeDirection.value = direction
 
-        if (direction > 0) {
-          runOnJS(triggerLike)()
-          nextCardTranslateX.value = -cardWidth * 1.2
-        } else {
-          runOnJS(triggerDislike)()
-          nextCardTranslateX.value = cardWidth * 1.2
-        }
+            if (direction > 0) {
+              runOnJS(triggerLike)()
+              nextCardTranslateX.value = -cardWidth * 1.2
+            } else {
+              runOnJS(triggerDislike)()
+              nextCardTranslateX.value = cardWidth * 1.2
+            }
 
-        translateX.value = withSpring(event.translationX > 0 ? cardWidth * 2 : -cardWidth * 2)
-        translateY.value = withSpring(0)
+            translateX.value = withSpring(event.translationX > 0 ? cardWidth * 2 : -cardWidth * 2)
+            translateY.value = withSpring(0)
 
-        setTimeout(() => {
-          nextCardOpacity.value = 1
-          nextCardTranslateX.value = withSpring(0, { damping: 20, stiffness: 90 })
-        }, 100)
-      } else {
-        translateX.value = withSpring(0)
-        translateY.value = withSpring(0)
-        const direction = event.translationX > 0 ? 1 : -1
-        const resetPosition = direction > 0 ? -cardWidth * 1.2 : cardWidth * 1.2
-        nextCardOpacity.value = 0
-        nextCardTranslateX.value = withSpring(resetPosition, { damping: 20, stiffness: 90 })
-      }
-    }) : Gesture.Pan()
+            setTimeout(() => {
+              nextCardOpacity.value = 1
+              nextCardTranslateX.value = withSpring(0, { damping: 20, stiffness: 90 })
+            }, 100)
+          } else {
+            translateX.value = withSpring(0)
+            translateY.value = withSpring(0)
+            const direction = event.translationX > 0 ? 1 : -1
+            const resetPosition = direction > 0 ? -cardWidth * 1.2 : cardWidth * 1.2
+            nextCardOpacity.value = 0
+            nextCardTranslateX.value = withSpring(resetPosition, { damping: 20, stiffness: 90 })
+          }
+        })
+    : Gesture.Pan()
+        .activeOffsetX([-10, 10]) // Require horizontal movement to activate
+        .failOffsetY([-20, 20]) // Cancel if too much vertical movement (for DevTools mobile mode scrolling)
+        .onUpdate((event) => {
+          translateX.value = event.translationX
+          translateY.value = 0
+        })
+        .onEnd((event) => {
+          const swipeThreshold = cardWidth * 0.3
+
+          if (Math.abs(event.translationX) > swipeThreshold) {
+            const direction = event.translationX > 0 ? 1 : -1
+            swipeDirection.value = direction
+
+            if (direction > 0) {
+              runOnJS(triggerLike)()
+              nextCardTranslateX.value = -cardWidth * 1.2
+            } else {
+              runOnJS(triggerDislike)()
+              nextCardTranslateX.value = cardWidth * 1.2
+            }
+
+            translateX.value = withSpring(event.translationX > 0 ? cardWidth * 2 : -cardWidth * 2)
+            translateY.value = withSpring(0)
+
+            setTimeout(() => {
+              nextCardOpacity.value = 1
+              nextCardTranslateX.value = withSpring(0, { damping: 20, stiffness: 90 })
+            }, 100)
+          } else {
+            translateX.value = withSpring(0)
+            translateY.value = withSpring(0)
+            const direction = event.translationX > 0 ? 1 : -1
+            const resetPosition = direction > 0 ? -cardWidth * 1.2 : cardWidth * 1.2
+            nextCardOpacity.value = 0
+            nextCardTranslateX.value = withSpring(resetPosition, { damping: 20, stiffness: 90 })
+          }
+        })
 
   const cardStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
@@ -362,31 +401,27 @@ export default function RecipeCarousel({ recipes, onLike, onReport }: RecipeCaro
         {/* Current Card (On Top) */}
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.mainContent, cardStyle]}>
-            {/* Like Overlay (Green) - Only visible on mobile during swipe */}
-            {Platform.OS !== 'web' && (
-              <>
-                <Animated.View style={[styles.swipeOverlay, likeOverlayStyle]} pointerEvents="none">
-                  <LinearGradient
-                    colors={['rgba(76, 175, 80, 0.9)', 'rgba(76, 175, 80, 0.5)', 'rgba(76, 175, 80, 0.2)', 'transparent']}
-                    locations={[0, 0.3, 0.6, 1]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.gradientOverlay}
-                  />
-                </Animated.View>
+            {/* Like Overlay (Green) - Visible during swipe */}
+            <Animated.View style={[styles.swipeOverlay, likeOverlayStyle]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(76, 175, 80, 0.9)', 'rgba(76, 175, 80, 0.5)', 'rgba(76, 175, 80, 0.2)', 'transparent']}
+                locations={[0, 0.3, 0.6, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientOverlay}
+              />
+            </Animated.View>
 
-                {/* Dislike Overlay (Red) - Only visible on mobile during swipe */}
-                <Animated.View style={[styles.swipeOverlay, dislikeOverlayStyle]} pointerEvents="none">
-                  <LinearGradient
-                    colors={['rgba(244, 67, 54, 0.9)', 'rgba(244, 67, 54, 0.5)', 'rgba(244, 67, 54, 0.2)', 'transparent']}
-                    locations={[0, 0.3, 0.6, 1]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.gradientOverlay}
-                  />
-                </Animated.View>
-              </>
-            )}
+            {/* Dislike Overlay (Red) - Visible during swipe */}
+            <Animated.View style={[styles.swipeOverlay, dislikeOverlayStyle]} pointerEvents="none">
+              <LinearGradient
+                colors={['rgba(244, 67, 54, 0.9)', 'rgba(244, 67, 54, 0.5)', 'rgba(244, 67, 54, 0.2)', 'transparent']}
+                locations={[0, 0.3, 0.6, 1]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientOverlay}
+              />
+            </Animated.View>
 
             {/* Mobile: Single ScrollView for everything */}
             {isMobile ? (
